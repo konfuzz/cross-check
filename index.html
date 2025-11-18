@@ -421,14 +421,14 @@ function renderMd(){
       const score = Number(st.score) || 0;
       md += `- [${checked}] **${it.title}** — ${score} / ${it.max} pts\n`;
       if (st.comment && st.comment.trim()){
-        md += `  \n  _Комментарий_: ${st.comment.trim()}\n`;
+        md += `  \n  _Comment_: ${st.comment.trim()}\n`;
       }
       grandTotal += score;
       grandMax += it.max;
     });
     md += `\n`;
   });
-  md += `---\n\n**Итого: ${grandTotal} / ${grandMax} pts**\n\n`;
+  md += `---\n\n**Result: ${grandTotal} / ${grandMax} pts**\n\n`;
   document.getElementById('mdPreview').textContent = md;
   return md;
 }
