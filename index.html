@@ -104,97 +104,106 @@
     {
       id: 'core', title: 'Core Game Logic', max: 85,
       items: [
-        { id: 'pair_ident', title: 'Pair validation - identical numbers: Correctly identifies pairs of same numbers (8 points)', max: 8 },
-        { id: 'pair_sum10', title: 'Pair validation - sum to 10: Correctly identifies pairs that sum to 10 (7 points)', max: 7 },
-        { id: 'score_ident', title: 'Scoring - identical pairs: Awards 1 point for identical pairs (5 points)', max: 5 },
-        { id: 'score_sum', title: 'Scoring - sum pairs: Awards 2 points for sum-to-10 pairs (5 points)', max: 5 },
-        { id: 'score_bonus5', title: 'Scoring - bonus pairs: Awards bonus for pairs of fives (5 points)', max: 5 },
-        { id: 'win_cond', title: 'Win condition detection: Detects win when score reaches 100+ (5 points)', max: 5 },
+        { id: 'pair_ident', title: 'Pair validation - identical numbers: Correctly identifies pairs of same numbers', max: 8 },
+        { id: 'pair_sum10', title: 'Pair validation - sum to 10: Correctly identifies pairs that sum to 10', max: 7 },
+        { id: 'score_ident', title: 'Scoring - identical pairs: Awards exactly 1 point for matching identical numbers', max: 5 },
+        { id: 'score_sum', title: 'Scoring - sum pairs: Awards exactly 2 points for numbers summing to 10', max: 5 },
+        { id: 'score_bonus5', title: 'Scoring - bonus pairs: Awards exactly 3 points for pairs of fives', max: 5 },
+        { id: 'win_cond', title: 'Win condition detection: Correctly ends game when score reaches 100+', max: 5 },
         { id: 'lose_header', title: 'Lose condition detection', max: 0, isHeader: true },
-        { id: 'lose_nomoves', title: 'No moves: Ends game when no moves and no assists remain (5 points)', max: 5, parent: 'lose_header' },
-        { id: 'lose_gridlimit', title: 'Grid limit: Ends game when the 50-line grid limit is reached (5 points)', max: 5, parent: 'lose_header' },
-        { id: 'grid_boundary', title: 'Grid boundary rules: Correct enforcement of grid boundaries (5 points)', max: 5 },
-        { id: 'limit_50line', title: '50-line limit enforcement: Correctly enforces the 50-line cap (5 points)', max: 5 },
-        { id: 'assist_header', title: 'Assist tools implementation', max: 0, isHeader: true },
-        { id: 'hint', title: 'Hints: Shows number of available valid moves (max "5+") (5 points)', max: 5, parent: 'assist_header' },
-        { id: 'revert', title: 'Revert: Undo last move (single-step, one use per turn) (5 points)', max: 5, parent: 'assist_header' },
-        { id: 'add_numbers', title: 'Add Numbers: Appends new numbers (max 10 uses per game) (10 points)', max: 10, parent: 'assist_header' },
-        { id: 'shuffle', title: 'Shuffle: Rearranges numbers (max 5 uses per game) (5 points)', max: 5, parent: 'assist_header' },
-        { id: 'eraser', title: 'Eraser: Removes a single number (max 5 uses per game) (5 points)', max: 5, parent: 'assist_header' },
+        { id: 'lose_nomoves', title: 'No moves: Correctly ends game when no moves available and no assists left', max: 5, parent: 'lose_header' },
+        { id: 'lose_gridlimit', title: 'Grid limit: Correctly ends game when the 50-line grid limit is reached', max: 5, parent: 'lose_header' },
+        { id: 'grid_boundary', title: 'Grid boundary rules: Implements proper row boundary pair matching (last number of one row can pair with the first number of the next row)', max: 5 },
+        { id: 'limit_50line', title: '50-line limit enforcement: Prevents adding numbers beyond grid limit', max: 5 },
+        { id: 'assist_header', title: 'Assist tools implementation: All 5 tools work with correct usage limits', max: 0, isHeader: true },
+        { id: 'hint', title: 'Hints: Shows the number of currently available valid moves (maximum display: "5+")', max: 5, parent: 'assist_header' },
+        { id: 'revert', title: 'Revert: Undoes the last move (single-step undo, limited to one use per turn)', max: 5, parent: 'assist_header' },
+        { id: 'add_numbers', title: 'Add Numbers: Appends new numbers to the grid according to the current mode (max 10 uses per game)', max: 10, parent: 'assist_header' },
+        { id: 'shuffle', title: 'Shuffle: Randomly rearranges existing numbers on the board (max 5 uses per game)', max: 5, parent: 'assist_header' },
+        { id: 'eraser', title: 'Eraser: Removes any single number from the grid (max 5 uses per game)', max: 5, parent: 'assist_header' },
       ]
     },
     {
       id: 'gridgen', title: 'Game Grid & Number Generation', max: 32,
       items: [
-        { id: 'classic_mode', title: 'Classic mode - sequential placement: Places ordered numbers 1–19 (9 points)', max: 9 },
-        { id: 'random_mode', title: 'Random mode - random placement: Random distribution of numbers 1–19 (9 points)', max: 9 },
-        { id: 'chaotic_mode', title: 'Chaotic mode - 27 numbers: Generates exactly 27 random numbers 1–9 (9 points)', max: 9 },
-        { id: 'regeneration', title: 'Number regeneration: Correct regeneration rules per mode (5 points)', max: 5 },
+        { id: 'classic_mode', title: 'Classic mode - sequential placement: Numbers 1-19 (excluding 0) in correct order', max: 9 },
+        { id: 'random_mode', title: 'Random mode - random placement: Numbers 1-19 (excluding 0) placed randomly', max: 9 },
+        { id: 'chaotic_mode', title: 'Chaotic mode - 27 numbers: Exactly 27 random numbers from 1-9', max: 9 },
+        { id: 'regeneration', title: 'Number regeneration: Correct number generation according to the current mode', max: 5 },
       ]
     },
     {
       id: 'ui', title: 'User Interface Components', max: 66,
       items: [
-        { id: 'start_title', title: 'Start screen - title: Displays main title (4 points)', max: 4 },
-        { id: 'start_credit', title: 'Start screen - author credit: Shows GitHub link (4 points)', max: 4 },
-        { id: 'start_modes', title: 'Start screen - mode selection: Three selectable modes (4 points)', max: 4 },
-        { id: 'grid_display', title: 'Game screen - grid display: Proper rendering of game grid (6 points)', max: 6 },
-        { id: 'score_display', title: 'Game screen - score display: Correct score updates (5 points)', max: 5 },
-        { id: 'timer_display', title: 'Game screen - timer: Accurate MM:SS display (5 points)', max: 5 },
-        { id: 'reset_btn', title: 'Reset button: Proper reset functionality (5 points)', max: 5 },
-        { id: 'save_btn', title: 'Save button: Saves game state (5 points)', max: 5 },
-        { id: 'continue_btn', title: 'Continue button: Loads saved game (5 points)', max: 5 },
-        { id: 'assist_ui', title: 'Assist UI: Displays assist tools with counters (5 points)', max: 5 },
-        { id: 'sound_toggle', title: 'Sound toggle: Audio on/off switch (3 points)', max: 3 },
-        { id: 'theme_switch', title: 'Theme switch: Light/Dark theme toggle (3 points)', max: 3 },
-        { id: 'results_stats', title: 'Results statistics: Displays score, time, and outcome (5 points)', max: 5 },
-        { id: 'highscores', title: 'High scores: Shows latest 5 results by time (4 points)', max: 4 },
-        { id: 'screen_nav', title: 'Screen navigation: Smooth transitions (3 points)', max: 3 },
+        { id: 'start_title', title: 'Start screen - title display: Game title prominently shown', max: 4 },
+        { id: 'start_credit', title: 'Start screen - author credit: GitHub link displayed and functional', max: 4 },
+        { id: 'start_modes', title: 'Start screen - mode selection: Three mode buttons functional', max: 4 },
+        { id: 'grid_display', title: 'Game screen - grid display: Initial grid properly rendered', max: 6 },
+        { id: 'score_display', title: 'Game screen - score display: Current and target score shown', max: 5 },
+        { id: 'timer_display', title: 'Game screen - timer display: MM:SS format counting from start', max: 5 },
+        { id: 'control_buttons', title: 'Control buttons: Reset, Save, Continue buttons functional ', max: 0, isHeader: true },
+        { id: 'reset_btn', title: 'Reset button: Restarts the current game in the same mode with fresh numbers', max: 5, parent: 'control_buttons' },
+        { id: 'save_btn', title: 'Save game button: Preserves current game state (grid, score, timer, mode, undo history, assist tools uses)', max: 5, parent: 'control_buttons' },
+        { id: 'continue_btn', title: 'Continue game button: Loads a previously saved game state', max: 5, parent: 'control_buttons' },
+        { id: 'assist_ui', title: 'Assist tools UI: All 5 tools displayed with usage counters', max: 5 },
+        { id: 'settings_panel', title: 'Settings panel: Complete audio and theme controls', max: 0, isHeader: true },
+        { id: 'sound_toggle', title: 'Sound toggle(s) for sound effects', max: 3, parent: 'settings_panel' },
+        { id: 'theme_switch', title: 'Theme switching between light and dark modes', max: 3, parent: 'settings_panel' },
+        { id: 'results_panel', title: 'Results screen: Statistics and high scores table properly displayed ', max: 0, isHeader: true },
+        { id: 'results_stats', title: 'Statistics: Current game score, completion time, win/loss outcome', max: 5, parent: 'results_panel' },
+        { id: 'highscores', title: 'High scores table: Latest 5 games sorted by time', max: 4, parent: 'results_panel' },
+        { id: 'screen_nav', title: 'Screen navigation: Proper transitions between all screens', max: 3 },
       ]
     },
     {
       id: 'resp', title: 'Responsive Design & Browser Support', max: 25,
       items: [
-        { id: 'responsive', title: 'Responsive display: Works on 380px–1280px + touch support (20 points)', max: 20 },
-        { id: 'chrome', title: 'Browser support: Chrome latest (5 points)', max: 5 },
+        { id: 'responsive', title: 'Proper display and touch functionality within 380px ≤ width ≤ 1280px viewport range: for desktop and mobile devices', max: 20 },
+        { id: 'chrome', title: 'Chrome browser support: Proper implemented functionality in latest Chrome', max: 5 },
       ]
     },
     {
       id: 'state', title: 'Game State Management', max: 32,
       items: [
-        { id: 'init_logic', title: 'Initialization: Correct game setup logic (7 points)', max: 7 },
-        { id: 'cell_select', title: 'Cell selection: Correct selection/deselection logic (6 points)', max: 6 },
-        { id: 'move_validate', title: 'Move validation: Proper rules & feedback (7 points)', max: 7 },
-        { id: 'grid_updates', title: 'Grid updates: Correct clearing & updates (6 points)', max: 6 },
-        { id: 'timer_accuracy', title: 'Timer accuracy: Correct MM:SS timing (6 points)', max: 6 },
+        { id: 'init_logic', title: 'Game initialization logic: Proper setup for each game mode', max: 7 },
+        { id: 'cell_select', title: 'Cell selection mechanism: Click/tap selection and deselection', max: 6 },
+        { id: 'move_validate', title: 'Move validation: Pair checking and success/failure feedback', max: 7 },
+        { id: 'grid_updates', title: 'Grid updates: Proper cell clearing and number positions', max: 6 },
+        { id: 'timer_accuracy', title: 'Timer accuracy: Precise MM:SS countdown functionality', max: 6 },
       ]
     },
     {
       id: 'av', title: 'Audio & Visual Feedback', max: 25,
       items: [
-        { id: 'select_sound', title: 'Selection sounds: Plays sound on selecting cells (4 points)', max: 4 },
-        { id: 'valid_invalid', title: 'Pair sounds: Valid/invalid sound feedback (3 points)', max: 3 },
-        { id: 'win_lose_sounds', title: 'Victory/defeat sounds: Plays correct end-game sounds (3 points)', max: 3 },
-        { id: 'highlighting', title: 'Highlighting: Visual highlight of cell states (5 points)', max: 5 },
-        { id: 'animations', title: 'Animations: Visual animation effects (5 points)', max: 5 },
-        { id: 'theme_complete', title: 'Theme switching: Full, polished theme change (5 points)', max: 5 },
+        { id: 'select_sound', title: 'Cell selection sounds: Audio feedback for cell interactions', max: 4 },
+        { id: 'valid_invalid', title: 'Valid/invalid pair sounds: Sounds for correct/invalid pair matches', max: 3 },
+        { id: 'win_lose_sounds', title: 'Win/lose sounds: Sounds for winning/losing the game', max: 3 },
+        { id: 'highlighting', title: 'Visual cell highlighting: Selected cells clearly indicated', max: 5 },
+        { id: 'animations', title: 'Animation effects: Smooth transitions and visual feedback', max: 5 },
+        { id: 'theme_complete', title: 'Theme switching: Complete light/dark mode implementation', max: 5 },
       ]
     },
     {
       id: 'data', title: 'Data Persistence & Settings', max: 20,
       items: [
-        { id: 'state_storage', title: 'Game state storage: Save & resume functionality (10 points)', max: 10 },
-        { id: 'settings_persist', title: 'Settings persistence: Audio/theme saving (5 points)', max: 5 },
-        { id: 'highscore_storage', title: 'High score storage: Stores latest 5 results (5 points)', max: 5 },
+        { id: 'state_storage', title: 'Game state storage: Grid, score, timer, mode, undo history, assist tools uses saved and can be resumed on page reload', max: 10 },
+        { id: 'settings_persist', title: 'Settings persistence: Audio and theme preferences saved', max: 5 },
+        { id: 'highscore_storage', title: 'High scores table: Latest 5 games sorted by time stored and retrieved', max: 5 },
       ]
     },
     {
-      id: 'code', title: 'Code Quality & Functionality', max: 15,
+      id: 'code', title: 'Code Quality & Functionality', max: 5,
       items: [
-        { id: 'error_handling', title: 'Error handling: No console errors (5 points)', max: 5 },
-        { id: 'bonus', title: 'Bonus feature: Additional implemented feature (10 points)', max: 10 },
+        { id: 'error_handling', title: 'Error handling: No JavaScript errors in browser console', max: 5 },
+      ]
+    }, 
+    {
+      id: 'bonus', title: 'Bonus', max: 10,
+      items: [
+        { id: 'bonus_feature', title: 'Bonus feature implemented', max: 10 },
       ]
     }
+
   ];
 
 
