@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Checklist — Game QA scorer</title>
+<style>
+  :root{
+    --bg:#f6f8fb; --card:#fff; --muted:#6b7280; --accent:#0b5cff; --accent-2:#f59e0b;
+    --shadow: 0 6px 18px rgba(12,20,40,0.08);
+  }
+  html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;}
+  body{background:linear-gradient(180deg,var(--bg), #ffffff); padding:20px; box-sizing:border-box; color:#0f1724;}
+  .container{max-width:1100px;margin:0 auto;}
+  header{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:18px;}
+  h1{font-size:20px;margin:0;}
+  .subtitle{color:var(--muted);font-size:13px;}
+  .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  button{background:var(--card);border:1px solid rgba(15,23,36,0.06);padding:8px 12px;border-radius:8px;cursor:pointer;box-shadow:var(--shadow);}
+  button.primary{background:linear-gradient(90deg,var(--accent),#2b7bff);color:#fff;border:none;}
+  .topstats{display:flex;gap:12px;align-items:center;}
+  .stat{background:var(--card);padding:8px 12px;border-radius:10px;box-shadow:var(--shadow);min-width:120px;text-align:center;}
+  .grid{display:grid;grid-template-columns:1fr 380px;gap:18px;align-items:start;}
+  @media(max-width:1000px){ .grid{grid-template-columns:1fr;} }
+  .card{background:var(--card);padding:14px;border-radius:12px;box-shadow:var(--shadow);}
+  .section{margin-bottom:12px;border-radius:8px;padding:12px;border:1px solid rgba(15,23,36,0.04);background:transparent;}
+  .section h2{margin:0 0 8px;font-size:16px;}
+  .items{display:flex;flex-direction:column;gap:8px;}
+  .item{display:flex;gap:10px;align-items:flex-start;padding:8px;border-radius:8px;background:linear-gradient(180deg, rgba(0,0,0,0.00), rgba(0,0,0,0.00));}
+  .item .left{width:36px;flex-shrink:0;}
+  .item .left input[type="checkbox"]{width:18px;height:18px;}
+  .item .body{flex:1;}
+  .item .title{font-weight:600;margin-bottom:4px;}
+  .item .meta{font-size:13px;color:var(--muted);margin-bottom:6px;}
+  .item .controls-inline{display:flex;gap:8px;align-items:center;}
+  .item input[type="number"]{width:80px;padding:6px;border-radius:6px;border:1px solid rgba(15,23,36,0.08);background:transparent;}
+  .item textarea{width:95%;min-height:56px;padding:8px;border-radius:8px;border:1px solid rgba(15,23,36,0.06);resize:vertical;margin-top:6px;background:transparent;color:inherit;}
+  .subtotal{display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px dashed rgba(15,23,36,0.04);margin-top:8px;}
+  .rightcol .summary{display:flex;flex-direction:column;gap:10px;}
+  .summary .box{padding:12px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));}
+  .small{font-size:13px;color:var(--muted);}
+  .md-output{white-space:pre-wrap;word-break:break-word;max-height:380px;overflow:auto;padding:10px;border-radius:8px;border:1px dashed rgba(15,23,36,0.04);background:transparent;}
+  footer{margin-top:18px;text-align:center;color:var(--muted);font-size:13px;}
+  .toggles{display:flex;gap:8px;align-items:center;}
+  .link{color:var(--accent);text-decoration:none;}
+  /* responsive minor */
+  @media(max-width:560px){
+    .item .controls-inline{flex-direction:column;align-items:flex-start;}
+    .item input[type="number"]{width:100%;}
+  }
+</style>
+</head>
+<body>
+<div class="container" id="app" data-theme="light">
+  <header>
+    <div>
+      <h1>Cross check: Pair-em-up</h1>
+    </div>
+    <div class="controls">
+      <button id="resetBtn">Сбросить</button>
+      <button id="copyMdBtn" class="primary">Скопировать в MD</button>
+      <button id="downloadMdBtn">Скачать .md</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <main>
+      <div class="card" id="checklistContainer"></div>
+    </main>
+
+    <aside class="rightcol">
+      <div class="summary card">
+        <div class="box">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div class="small">Общий результат</div>
+              <div style="font-size:20px;font-weight:700" id="totalScore">0</div>
+            </div>
+            <div style="text-align:right">
+              <div class="small">Всего возможных баллов</div>
+              <div id="maxScore" style="font-weight:700">0</div>
+            </div>
+          </div>
+          <div style="margin-top:8px" class="small" id="percentBox">0% — 0 / 0</div>
+        </div>
+
+        <div class="box">
+          <div class="small">Подитоги по секциям</div>
+          <div id="sectionTotals" style="margin-top:8px;display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+
+        <div class="box">
+          <div class="small">Markdown preview</div>
+          <div class="md-output" id="mdPreview">Ничего пока...</div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+/* Data model: sections -> items. Each item: id,title,max,section, optional parent (for hierarchy) */
+  const DATA = [
+    {
+      id: 'core', title: 'Core Game Logic', max: 85,
+      items: [
+        { id: 'pair_ident', title: 'Pair validation - identical numbers: Correctly identifies pairs of same numbers (8 points)', max: 8 },
+        { id: 'pair_sum10', title: 'Pair validation - sum to 10: Correctly identifies pairs that sum to 10 (7 points)', max: 7 },
+        { id: 'score_ident', title: 'Scoring - identical pairs: Awards 1 point for identical pairs (5 points)', max: 5 },
+        { id: 'score_sum', title: 'Scoring - sum pairs: Awards 2 points for sum-to-10 pairs (5 points)', max: 5 },
+        { id: 'score_bonus5', title: 'Scoring - bonus pairs: Awards bonus for pairs of fives (5 points)', max: 5 },
+        { id: 'win_cond', title: 'Win condition detection: Detects win when score reaches 100+ (5 points)', max: 5 },
+        { id: 'lose_header', title: 'Lose condition detection', max: 0, isHeader: true },
+        { id: 'lose_nomoves', title: 'No moves: Ends game when no moves and no assists remain (5 points)', max: 5, parent: 'lose_header' },
+        { id: 'lose_gridlimit', title: 'Grid limit: Ends game when the 50-line grid limit is reached (5 points)', max: 5, parent: 'lose_header' },
+        { id: 'grid_boundary', title: 'Grid boundary rules: Correct enforcement of grid boundaries (5 points)', max: 5 },
+        { id: 'limit_50line', title: '50-line limit enforcement: Correctly enforces the 50-line cap (5 points)', max: 5 },
+        { id: 'assist_header', title: 'Assist tools implementation', max: 0, isHeader: true },
+        { id: 'hint', title: 'Hints: Shows number of available valid moves (max "5+") (5 points)', max: 5, parent: 'assist_header' },
+        { id: 'revert', title: 'Revert: Undo last move (single-step, one use per turn) (5 points)', max: 5, parent: 'assist_header' },
+        { id: 'add_numbers', title: 'Add Numbers: Appends new numbers (max 10 uses per game) (10 points)', max: 10, parent: 'assist_header' },
+        { id: 'shuffle', title: 'Shuffle: Rearranges numbers (max 5 uses per game) (5 points)', max: 5, parent: 'assist_header' },
+        { id: 'eraser', title: 'Eraser: Removes a single number (max 5 uses per game) (5 points)', max: 5, parent: 'assist_header' },
+      ]
+    },
+    {
+      id: 'gridgen', title: 'Game Grid & Number Generation', max: 32,
+      items: [
+        { id: 'classic_mode', title: 'Classic mode - sequential placement: Places ordered numbers 1–19 (9 points)', max: 9 },
+        { id: 'random_mode', title: 'Random mode - random placement: Random distribution of numbers 1–19 (9 points)', max: 9 },
+        { id: 'chaotic_mode', title: 'Chaotic mode - 27 numbers: Generates exactly 27 random numbers 1–9 (9 points)', max: 9 },
+        { id: 'regeneration', title: 'Number regeneration: Correct regeneration rules per mode (5 points)', max: 5 },
+      ]
+    },
+    {
+      id: 'ui', title: 'User Interface Components', max: 66,
+      items: [
+        { id: 'start_title', title: 'Start screen - title: Displays main title (4 points)', max: 4 },
+        { id: 'start_credit', title: 'Start screen - author credit: Shows GitHub link (4 points)', max: 4 },
+        { id: 'start_modes', title: 'Start screen - mode selection: Three selectable modes (4 points)', max: 4 },
+        { id: 'grid_display', title: 'Game screen - grid display: Proper rendering of game grid (6 points)', max: 6 },
+        { id: 'score_display', title: 'Game screen - score display: Correct score updates (5 points)', max: 5 },
+        { id: 'timer_display', title: 'Game screen - timer: Accurate MM:SS display (5 points)', max: 5 },
+        { id: 'reset_btn', title: 'Reset button: Proper reset functionality (5 points)', max: 5 },
+        { id: 'save_btn', title: 'Save button: Saves game state (5 points)', max: 5 },
+        { id: 'continue_btn', title: 'Continue button: Loads saved game (5 points)', max: 5 },
+        { id: 'assist_ui', title: 'Assist UI: Displays assist tools with counters (5 points)', max: 5 },
+        { id: 'sound_toggle', title: 'Sound toggle: Audio on/off switch (3 points)', max: 3 },
+        { id: 'theme_switch', title: 'Theme switch: Light/Dark theme toggle (3 points)', max: 3 },
+        { id: 'results_stats', title: 'Results statistics: Displays score, time, and outcome (5 points)', max: 5 },
+        { id: 'highscores', title: 'High scores: Shows latest 5 results by time (4 points)', max: 4 },
+        { id: 'screen_nav', title: 'Screen navigation: Smooth transitions (3 points)', max: 3 },
+      ]
+    },
+    {
+      id: 'resp', title: 'Responsive Design & Browser Support', max: 25,
+      items: [
+        { id: 'responsive', title: 'Responsive display: Works on 380px–1280px + touch support (20 points)', max: 20 },
+        { id: 'chrome', title: 'Browser support: Chrome latest (5 points)', max: 5 },
+      ]
+    },
+    {
+      id: 'state', title: 'Game State Management', max: 32,
+      items: [
+        { id: 'init_logic', title: 'Initialization: Correct game setup logic (7 points)', max: 7 },
+        { id: 'cell_select', title: 'Cell selection: Correct selection/deselection logic (6 points)', max: 6 },
+        { id: 'move_validate', title: 'Move validation: Proper rules & feedback (7 points)', max: 7 },
+        { id: 'grid_updates', title: 'Grid updates: Correct clearing & updates (6 points)', max: 6 },
+        { id: 'timer_accuracy', title: 'Timer accuracy: Correct MM:SS timing (6 points)', max: 6 },
+      ]
+    },
+    {
+      id: 'av', title: 'Audio & Visual Feedback', max: 25,
+      items: [
+        { id: 'select_sound', title: 'Selection sounds: Plays sound on selecting cells (4 points)', max: 4 },
+        { id: 'valid_invalid', title: 'Pair sounds: Valid/invalid sound feedback (3 points)', max: 3 },
+        { id: 'win_lose_sounds', title: 'Victory/defeat sounds: Plays correct end-game sounds (3 points)', max: 3 },
+        { id: 'highlighting', title: 'Highlighting: Visual highlight of cell states (5 points)', max: 5 },
+        { id: 'animations', title: 'Animations: Visual animation effects (5 points)', max: 5 },
+        { id: 'theme_complete', title: 'Theme switching: Full, polished theme change (5 points)', max: 5 },
+      ]
+    },
+    {
+      id: 'data', title: 'Data Persistence & Settings', max: 20,
+      items: [
+        { id: 'state_storage', title: 'Game state storage: Save & resume functionality (10 points)', max: 10 },
+        { id: 'settings_persist', title: 'Settings persistence: Audio/theme saving (5 points)', max: 5 },
+        { id: 'highscore_storage', title: 'High score storage: Stores latest 5 results (5 points)', max: 5 },
+      ]
+    },
+    {
+      id: 'code', title: 'Code Quality & Functionality', max: 15,
+      items: [
+        { id: 'error_handling', title: 'Error handling: No console errors (5 points)', max: 5 },
+        { id: 'bonus', title: 'Bonus feature: Additional implemented feature (10 points)', max: 10 },
+      ]
+    }
+  ];
+
+
+/* --- State persistence in localStorage (simple) --- */
+const STORAGE_KEY = 'qa_checklist_state_v1';
+let state = loadState();
+
+/* Initialize default state if none */
+function makeDefaultState(){
+  const s = {items:{}};
+  DATA.forEach(section => {
+    section.items.forEach(it => {
+      if (it.isHeader) return;
+      s.items[it.id] = {checked:false,score:0,comment:''};
+    });
+  });
+  return s;
+}
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return makeDefaultState();
+    const parsed = JSON.parse(raw);
+    // ensure all items exist
+    const def = makeDefaultState();
+    parsed.items = Object.assign(def.items, parsed.items || {});
+    return parsed;
+  }catch(e){
+    console.error('state load error', e);
+    return makeDefaultState();
+  }
+}
+function saveState(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }catch(e){ console.error('save error', e); }
+}
+
+/* Build UI */
+const checklistContainer = document.getElementById('checklistContainer');
+
+function createChecklist(){
+  checklistContainer.innerHTML = '';
+  DATA.forEach(section => {
+    const sec = document.createElement('div');
+    sec.className = 'section';
+    const header = document.createElement('h2');
+    header.textContent = section.title + ` — (${section.max} pts)`;
+    sec.appendChild(header);
+
+    const itemsWrap = document.createElement('div');
+    itemsWrap.className = 'items';
+
+    section.items.forEach(item => {
+      // header/label within section
+      if (item.isHeader){
+        const hdr = document.createElement('div');
+        hdr.style.fontWeight='700';
+        hdr.style.margin='6px 0';
+        hdr.textContent = item.title;
+        itemsWrap.appendChild(hdr);
+        return;
+      }
+
+      const it = document.createElement('div');
+      it.className = 'item card';
+      it.style.display='flex';
+      // left checkbox
+      const left = document.createElement('div'); left.className='left';
+      const cb = document.createElement('input'); cb.type='checkbox'; cb.id = 'cb_'+item.id;
+      cb.checked = state.items[item.id].checked;
+      left.appendChild(cb);
+      it.appendChild(left);
+
+      // body
+      const body = document.createElement('div'); body.className='body';
+      const title = document.createElement('div'); title.className='title';
+      title.textContent = item.title;
+      body.appendChild(title);
+
+      const meta = document.createElement('div'); meta.className='meta';
+      meta.textContent = `max: ${item.max} pts`;
+      body.appendChild(meta);
+
+      const controlsRow = document.createElement('div'); controlsRow.className='controls-inline';
+      // score input
+      const scoreLabel = document.createElement('label'); scoreLabel.className='small'; scoreLabel.textContent='Баллы';
+      const scoreInput = document.createElement('input'); scoreInput.type='number'; scoreInput.min=0; scoreInput.max=item.max; scoreInput.step=0.5;
+      scoreInput.value = state.items[item.id].score;
+      scoreInput.title = 'Введи баллы за этот пункт';
+      // quick set to max button
+      const setMaxBtn = document.createElement('button'); setMaxBtn.textContent='Max'; setMaxBtn.title='Поставить макс. балл';
+      setMaxBtn.style.padding='6px 8px';
+      // clear button
+      const clearBtn = document.createElement('button'); clearBtn.textContent='Clear'; clearBtn.title='Снять баллы';
+      clearBtn.style.padding='6px 8px';
+
+      controlsRow.appendChild(scoreLabel);
+      controlsRow.appendChild(scoreInput);
+      controlsRow.appendChild(setMaxBtn);
+      controlsRow.appendChild(clearBtn);
+
+      body.appendChild(controlsRow);
+
+      const comment = document.createElement('textarea'); comment.placeholder='Комментарий (опционально)';
+      comment.value = state.items[item.id].comment || '';
+      body.appendChild(comment);
+
+      it.appendChild(body);
+      itemsWrap.appendChild(it);
+
+      /* Events */
+      cb.addEventListener('change',()=>{
+        state.items[item.id].checked = cb.checked;
+        // by default, when checked, set score to max; when unchecked, leave score as is or set to 0? we'll keep score but if unchecked user might want zero -> do nothing automated, but offer convenience SetMax/Clear btns
+        saveState(); renderTotals(); renderMd();
+      });
+      scoreInput.addEventListener('input', ()=>{
+        let val = parseFloat(scoreInput.value);
+        if (isNaN(val)) val = 0;
+        if (val < 0) val = 0;
+        if (val > item.max) val = item.max;
+        state.items[item.id].score = val;
+        scoreInput.value = val;
+        // if user set positive score but checkbox not checked -> set checked
+        if (val > 0 && !cb.checked){ cb.checked = true; state.items[item.id].checked = true; }
+        // if score 0 and checkbox checked -> keep checked (user may want)
+        saveState(); renderTotals(); renderMd();
+      });
+      setMaxBtn.addEventListener('click', ()=>{
+        state.items[item.id].score = item.max;
+        scoreInput.value = item.max;
+        if (!cb.checked){ cb.checked = true; state.items[item.id].checked = true; }
+        saveState(); renderTotals(); renderMd();
+      });
+      clearBtn.addEventListener('click', ()=>{
+        state.items[item.id].score = 0;
+        scoreInput.value = 0;
+        state.items[item.id].checked = false;
+        cb.checked = false;
+        saveState(); renderTotals(); renderMd();
+      });
+      comment.addEventListener('input', ()=>{
+        state.items[item.id].comment = comment.value;
+        saveState(); renderMd();
+      });
+    });
+
+    sec.appendChild(itemsWrap);
+
+    // subtotal line
+    const subtotal = document.createElement('div'); subtotal.className='subtotal';
+    const leftTxt = document.createElement('div'); leftTxt.className='small'; leftTxt.textContent='Секция итого';
+    const rightTxt = document.createElement('div'); rightTxt.className='small'; rightTxt.id = 'subtotal_'+section.id;
+    rightTxt.textContent = '0 / ' + section.max;
+    subtotal.appendChild(leftTxt);
+    subtotal.appendChild(rightTxt);
+    sec.appendChild(subtotal);
+
+    checklistContainer.appendChild(sec);
+  });
+}
+
+/* Totals rendering */
+function renderTotals(){
+  // total and max
+  let total = 0, maxTotal = 0;
+  const sectionTotals = {};
+  DATA.forEach(section=>{
+    let sSum = 0, sMax = section.max;
+    section.items.forEach(it => {
+      if (it.isHeader) return;
+      const st = state.items[it.id];
+      sSum += Number(st.score) || 0;
+    });
+    sectionTotals[section.id] = {sum: sSum, max: sMax};
+    // update UI subtotal
+    const el = document.getElementById('subtotal_'+section.id);
+    if (el) el.textContent = `${sSum} / ${sMax}`;
+    total += sSum;
+    maxTotal += sMax;
+  });
+  document.getElementById('totalScore').textContent = total;
+  document.getElementById('maxScore').textContent = maxTotal;
+  const percent = maxTotal ? Math.round((total/maxTotal)*100) : 0;
+  document.getElementById('percentBox').textContent = `${percent}% — ${total} / ${maxTotal}`;
+
+  // section list right
+  const secBox = document.getElementById('sectionTotals');
+  secBox.innerHTML = '';
+  for (const s of DATA){
+    const row = document.createElement('div');
+    row.style.display='flex'; row.style.justifyContent='space-between';
+    const name = document.createElement('div'); name.textContent = s.title;
+    const val = document.createElement('div'); val.textContent = `${sectionTotals[s.id].sum} / ${sectionTotals[s.id].max}`;
+    val.style.fontWeight='700';
+    row.appendChild(name); row.appendChild(val);
+    secBox.appendChild(row);
+  }
+}
+
+/* Markdown rendering */
+function renderMd(){
+  let md = `# Game QA Checklist — Results\n\n`;
+  let grandTotal = 0, grandMax = 0;
+  DATA.forEach(section=>{
+    md += `## ${section.title} (${section.max} pts)\n\n`;
+    section.items.forEach(it=>{
+      if (it.isHeader){
+        md += `**${it.title}**\n\n`;
+        return;
+      }
+      const st = state.items[it.id];
+      const checked = st.checked ? 'x' : ' ';
+      const score = Number(st.score) || 0;
+      md += `- [${checked}] **${it.title}** — ${score} / ${it.max} pts\n`;
+      if (st.comment && st.comment.trim()){
+        md += `  \n  _Комментарий_: ${st.comment.trim()}\n`;
+      }
+      grandTotal += score;
+      grandMax += it.max;
+    });
+    md += `\n`;
+  });
+  md += `---\n\n**Итого: ${grandTotal} / ${grandMax} pts**\n\n`;
+  document.getElementById('mdPreview').textContent = md;
+  return md;
+}
+
+/* Copy to clipboard & download */
+document.getElementById('copyMdBtn').addEventListener('click', async ()=>{
+  const md = renderMd();
+  try{
+    await navigator.clipboard.writeText(md);
+    alert('Markdown скопирован в буфер обмена');
+  }catch(e){
+    // fallback
+    const ta = document.createElement('textarea'); ta.value = md; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy'); ta.remove();
+    alert('Markdown скопирован (fallback).');
+  }
+});
+document.getElementById('downloadMdBtn').addEventListener('click', ()=>{
+  const md = renderMd();
+  const blob = new Blob([md], {type:'text/markdown;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'qa_checklist_results.md';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+});
+
+/* Reset */
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  if (!confirm('Сбросить все отметки, баллы и комментарии?')) return;
+  state = makeDefaultState();
+  saveState();
+  createChecklist();
+  renderTotals();
+  renderMd();
+});
+
+/* initial render */
+createChecklist();
+renderTotals();
+renderMd();
+
+/* ensure saving on unload */
+window.addEventListener('beforeunload', saveState);
+</script>
+</body>
+</html>
